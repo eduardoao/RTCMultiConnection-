@@ -179,6 +179,8 @@ connection.videosContainer = document.getElementById('videos-container');
 connection.onstream = function(event) {
     e.mediaElement.id = e.streamid; // ---------- set ID
     document.body.appendChild(e.mediaElement);
+    connection.onmute(event);
+    alert("MUTE");
 
     var existing = document.getElementById(event.streamid);
     if(existing && existing.parentNode) {
