@@ -93,6 +93,11 @@ connection.session = {
     video: true
 };
 
+
+var userid = connection.token();
+console.log(userid);
+console.log(navigator.connection.downlinkMax);
+
 connection.sdpConstraints.mandatory = {
     OfferToReceiveAudio: true,
     OfferToReceiveVideo: true
