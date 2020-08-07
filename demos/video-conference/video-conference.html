@@ -55,6 +55,8 @@
 <script src="/node_modules/webrtc-adapter/out/adapter.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 
+<script src="https://github.com/muaz-khan/RTCMultiConnection/blob/master/dev/hark.js"></script>
+
 <!-- custom layout for HTML5 audio/video elements -->
 <link rel="stylesheet" href="/dev/getHTMLMediaElement.css">
 <script src="/dev/getHTMLMediaElement.js"></script>
@@ -101,10 +103,83 @@ connection.sdpConstraints.mandatory = {
     OfferToReceiveAudio: true,
     OfferToReceiveVideo: true
 };
+/////////////////////
+connection.onspeaking = function(e) {
+    if (connection.numberOfConnectedUsers > 0) {
+        // You can even use "sendCustomMessage"
+        connection.send({
+            streamid: e.streamid,
+            speaking: true
+        });
+    }
+    e.mediaElement.style.border = '3px dotted red';
+};
+
+connection.onsilence = function(e) {
+    // "numberOfConnectedUsers" is checked because we are using data channels
+    // you shouldn't use this block if you're using "sendCustomMessage"
+    if (connection.numberOfConnectedUsers > 0) {
+        // You can even use "sendCustomMessage"
+        connection.send({
+            streamid: e.streamid,
+            silence: true
+        });
+    }
+
+    e.mediaElement.style.border = '1px solid rgb(0, 0, 0)';
+};
+
+connection.onmute = function(event) {
+    if (event.session.video) {
+        event.mediaElement.src2 = event.mediaElement.src;
+        event.mediaElement.src = '';
+        event.mediaElement.style.background = 'transparent url(https://cdn.webrtc-experiment.com/images/muted.png) no-repeat center center';
+        return;
+    }
+
+    if (event.stream.pause) {
+        // for audio-streams
+        // ask hark.js to resume looping and checking for voice activity
+        event.stream.pause();
+    }
+};
+
+connection.onunmute = function(event) {
+    if (event.session.video) {
+        event.mediaElement.src = event.mediaElement.src2;
+        event.mediaElement.play();
+        event.mediaElement.style.background = '';
+        return;
+    }
+
+    if (event.stream.resume) {
+        // for audio-streams
+        // ask hark.js to stop looping and checking for voice activity
+        event.stream.resume();
+    }
+};
+
+connection.session = {
+    audio: true,
+    video: true,
+    data: true //------ data-channels
+};
+
+connection.onmessage = function(event) {
+    if (event.data.speaking) {
+        var mediaElement = document.getElementById(event.data.streamid);
+        if (mediaElement) mediaElement.style.border = '3px dotted red';
+        return;
+    }
+};
+//////////////
 
 connection.videosContainer = document.getElementById('videos-container');
 
 connection.onstream = function(event) {
+    e.mediaElement.id = e.streamid; // ---------- set ID
+    document.body.appendChild(e.mediaElement);
+
     var existing = document.getElementById(event.streamid);
     if(existing && existing.parentNode) {
       existing.parentNode.removeChild(existing);
